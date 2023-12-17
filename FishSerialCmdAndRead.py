@@ -9,7 +9,7 @@ led = Pin(25, Pin.OUT)   # create LED object from Pin 25, Set Pin 15 to output
 myUsart0 = UART(0, baudrate=1200, bits=8, tx=Pin(0), rx=Pin(1), timeout=20)
 # Other side
 # myUsart1 = UART(1, baudrate=9600, bits=8, tx=Pin(8), rx=Pin(9), timeout=15)
-print("Starting FishSerialCmdAndRead.py")
+print("Starting FishSerialCmdAndRead.py  You may have to 'STOP' & Run a couple times.  Don't forget to officaly stop the program with a Cntl-C.")
 i = 0
 lineData=""
 stringData=""
@@ -31,6 +31,8 @@ files_items = statvfs("/")
 
 def getLine():
     i=0
+    idx=None
+    idh=None
     stringData=""
     while stringData=="":
         rxData = bytes()
@@ -59,7 +61,7 @@ def getLine():
             #print("i=",i,"Waiting for CMD response>" , stringData,"<")
             i = 0
 
-    print("Before try i =", i,"string data=", stringData)
+    print("Before try i =", i,"time or header cmd exist =", idx, idh)
 
 print("Set time")
 timestamp=rtc.datetime()
