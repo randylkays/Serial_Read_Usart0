@@ -69,22 +69,21 @@ def GetFileDump(sCmd):
     print("running GetFileDump =",sCmd)
     iFlg=0
     lineData=""
-    stringData=""
     iLed=0
     iCmd=0
+    iDone=0
     recomma=re.compile(",")
     f=recomma.split(sCmd)
     filename="FilesDump"+f[1]
     file = open(filename, "w")
     # file.close()
     regex=re.compile("\n")
-    while True:
+    while iCmd==0:
         rxData = bytes()
         time.sleep(0.1)
         while myUsart0.any() > 0:
             rxData += myUsart0.read(1)
             # print("fileDump:", rxData)
-        
         idx=re.search("CMD",rxData)
         idp=re.search("printfile",rxData)
         idlf=re.search("\n",rxData)
@@ -92,43 +91,64 @@ def GetFileDump(sCmd):
             iCmd=2
             # print("When not None ->",iFlg,"iCmd=",iCmd,stringData,lineData,rxData)
         if iCmd>0:
-            stringData = rxData.decode('utf-8')
-            if len(stringData)==0:
-                iFlg=1
-                if lineData=="EOF":
-                    file.close
-                    return
-                # print("stringData len=0, iFlg=",iFlg,"lineData=",lineData)
-                lineData=""
-            else:
-                # print("if stringData len>0 ->",iFlg,stringData,lineData)
-                if stringData=="EOF":
-                    file.close
-                    return
-                if idlf!=None:   # iFlg==1:
-                    # Print data & write data to files.
-                    s=regex.split(stringData)
-                    lineData=lineData+s[0]
-                    if (len(lineData)>0):
-                        if iCmd==1:
-                            # print("Final-> ",lineData)
-                            #file = open(filename, "a")
-                            file.write(lineData+"\n")
-                            #file.close()
-                        else:
-                            recmd=re.compile("CMD:")
-                            fCmd=recmd.split(lineData)
-                            print("Commmand ack received:",fCmd[1])
-                    iCmd=1
-                    lineData=s[1]
-                    iFlg = 0
-                    # Turn led on/off
-                    iLed=(iLed+1)%2
-                    led.value(iLed)
+            readit(rxData)
+
+    while True:
+        rxData = bytes()
+        time.sleep(0.1)
+        while myUsart0.any() > 0:
+            rxData += myUsart0.read(1)
+            # print("fileDump:", rxData)
+
+        if iCmd>0:
+            readit(rxData)
+        
+        if iDone==1:
+            return           
+
+def readit(rxData):
+    global iCmd,iFlg,iDone,lineData,iLed
+    # stringData=""
+    stringData = rxData.decode('utf-8')
+    if len(stringData)==0:
+        iFlg=1
+        if lineData=="EOF":
+            file.close
+            iDone=1
+            return 
+        # print("stringData len=0, iFlg=",iFlg,"lineData=",lineData)
+        lineData=""
+    else:
+        # print("if stringData len>0 ->",iFlg,stringData,lineData)
+        if stringData=="EOF":
+            file.close
+            iDone=1
+            return 
+        if idlf!=None:   # iFlg==1:
+            # Print data & write data to files.
+            s=regex.split(stringData)
+            lineData=lineData+s[0]
+            if (len(lineData)>0):
+                if iCmd==1:
+                    # print("Final-> ",lineData)
+                    #file = open(filename, "a")
+                    file.write(lineData+"\n")
+                    #file.close()
                 else:
-                    lineData=lineData+stringData
-                # print("stringData len>0  iFlg==1? ->",iFlg,"iCmd=",iCmd,"idlf=",idlf,stringData,lineData)
-            # print("iFlg=",iFlg,"len(stringData)=",len(stringData),"lineData=", lineData)
+                    recmd=re.compile("CMD:")
+                    fCmd=recmd.split(lineData)
+                    print("Commmand ack received:",fCmd[1])
+            iCmd=1
+            lineData=s[1]
+            iFlg = 0
+            # Turn led on/off
+            iLed=(iLed+1)%2
+            led.value(iLed)
+        else:
+            lineData=lineData+stringData
+        # print("stringData len>0  iFlg==1? ->",iFlg,"iCmd=",iCmd,"idlf=",idlf,stringData,lineData)
+    # print("iFlg=",iFlg,"len(stringData)=",len(stringData),"lineData=", lineData)
+    return 
 
 
 
