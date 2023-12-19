@@ -10,7 +10,7 @@ led = Pin(25, Pin.OUT)   # create LED object from Pin 25, Set Pin 15 to output
 myUsart0 = UART(0, baudrate=1200, bits=8, tx=Pin(0), rx=Pin(1), timeout=20)
 # Other side
 # myUsart1 = UART(1, baudrate=9600, bits=8, tx=Pin(8), rx=Pin(9), timeout=15)
-print("Starting FishFilesCMDs.py  Use Cntl-C to Stop Program")
+print("Starting FishFilesCMDs.py  Use Cntl-C to Stop Program. (For somereason it misses some of the data).  ")
 i = 0
 lineData=""
 stringData=""
@@ -18,6 +18,12 @@ iLed=0
 sCmdFiles="listfiles"
 sCmdPrint="printfile,"
 sCmdRemove="remove,"
+iFlg=0
+lineData=""
+iLed=0
+iCmd=0
+iDone=0
+idlf=None
 
 timestamp=rtc.datetime()
 if timestamp[0] == 2021:
@@ -33,7 +39,18 @@ else:
 #File storage data
 files_items = statvfs("/")
 
+def def_global_var():
+    global iCmd,iFlg,iDone,lineData,iLed,idlf
+    iFlg=0
+    lineData=""
+    iLed=0
+    iCmd=0
+    iDone=0
+    idlf=None
+
+
 def getLine(sCmd):
+    global iCmd,iFlg,iDone,lineData,iLed,idlf
     i=0
     idx=None
     stringData=""
@@ -44,7 +61,7 @@ def getLine(sCmd):
             rxData += myUsart0.readline()
         idx=re.search("^CMD",rxData)
         if idx==None:
-            print("No command, try again.")
+            print("No command, give it a moment and try again.")
             exit()
         print("rxData:", rxData)
         stringData = rxData.decode('utf-8')
@@ -65,51 +82,12 @@ def getLine(sCmd):
             #print("i=",i,"Waiting for CMD response>" , stringData,"<")
             i = 0
 
-def GetFileDump(sCmd):
-    print("running GetFileDump =",sCmd)
-    iFlg=0
-    lineData=""
-    iLed=0
-    iCmd=0
-    iDone=0
-    recomma=re.compile(",")
-    f=recomma.split(sCmd)
-    filename="FilesDump"+f[1]
-    file = open(filename, "w")
-    # file.close()
-    regex=re.compile("\n")
-    while iCmd==0:
-        rxData = bytes()
-        time.sleep(0.1)
-        while myUsart0.any() > 0:
-            rxData += myUsart0.read(1)
-            # print("fileDump:", rxData)
-        idx=re.search("CMD",rxData)
-        idp=re.search("printfile",rxData)
-        idlf=re.search("\n",rxData)
-        if idx!=None or idp!=None:
-            iCmd=2
-            # print("When not None ->",iFlg,"iCmd=",iCmd,stringData,lineData,rxData)
-        if iCmd>0:
-            readit(rxData)
-
-    while True:
-        rxData = bytes()
-        time.sleep(0.1)
-        while myUsart0.any() > 0:
-            rxData += myUsart0.read(1)
-            # print("fileDump:", rxData)
-
-        if iCmd>0:
-            readit(rxData)
-        
-        if iDone==1:
-            return           
-
-def readit(rxData):
-    global iCmd,iFlg,iDone,lineData,iLed
+def readUpload(rxData,file):
+    global iCmd,iFlg,iDone,lineData,iLed,idlf
     # stringData=""
+    regex=re.compile("\n")
     stringData = rxData.decode('utf-8')
+    idlf=re.search("\n",rxData)
     if len(stringData)==0:
         iFlg=1
         if lineData=="EOF":
@@ -136,6 +114,7 @@ def readit(rxData):
                     #file.close()
                 else:
                     recmd=re.compile("CMD:")
+                    print("lineData=",lineData)
                     fCmd=recmd.split(lineData)
                     print("Commmand ack received:",fCmd[1])
             iCmd=1
@@ -150,9 +129,43 @@ def readit(rxData):
     # print("iFlg=",iFlg,"len(stringData)=",len(stringData),"lineData=", lineData)
     return 
 
+def GetFileDump(sCmd):
+    global iCmd,iFlg,iDone,lineData,iLed,idlf
+    print("running GetFileDump =",sCmd,"iCmd=",iCmd)
+    recomma=re.compile(",")
+    f=recomma.split(sCmd)
+    filename="FilesDump"+f[1]
+    file = open(filename, "w")
+    # file.close()
+    while iCmd==0:
+        rxData = bytes()
+        time.sleep(0.1)
+        while myUsart0.any() > 0:
+            rxData += myUsart0.read(1)
+            # print("fileDump:", rxData)
+        idx=re.search("CMD",rxData)
+        idp=re.search("printfile",rxData)
+        idlf=re.search("\n",rxData)
+        if idx!=None or idp!=None:
+            iCmd=2
+            # print("When not None ->",iFlg,"iCmd=",iCmd,stringData,lineData,rxData)
+        if iCmd>0:
+            # print("readit(",rxData,")")
+            readUpload(rxData,file)
 
+    while iDone!=1:
+        rxData = bytes()
+        time.sleep(0.1)
+        while myUsart0.any() > 0:
+            rxData += myUsart0.read(1)
+            # print("fileDump:", rxData)
+        if iCmd>0:
+            readUpload(rxData,file)
+            
+    return    
 
 def SelectFile():
+    global iCmd,iFlg,iDone,lineData,iLed,idlf
     j=0
     i=0
     iLed=0
@@ -206,6 +219,7 @@ def SelectFile():
 
 try: 
     print("Get filenames")
+    def_global_var()
     myUsart0.write(sCmdFiles)
     time.sleep(1)
     getLine(sCmdFiles)
