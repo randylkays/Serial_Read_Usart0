@@ -8,14 +8,14 @@ rtc=machine.RTC()
 led = Pin(25, Pin.OUT)   # create LED object from Pin 25, Set Pin 15 to output
 
 myUsart0 = UART(0, baudrate=1200, bits=8, tx=Pin(0), rx=Pin(1), timeout=20)
-# Other side
-# myUsart1 = UART(1, baudrate=9600, bits=8, tx=Pin(8), rx=Pin(9), timeout=15)
 print("Starting FishFilesCMDs.py  Use Cntl-C to Stop Program. (For somereason it misses some of the data).  ")
 i = 0
 lineData=""
 stringData=""
 iLed=0
+# CMDs to the remote Pico
 sCmdFiles="listfiles"
+sCmdFilesInfo="allfileinfo"
 sCmdPrint="printfile,"
 sCmdRemove="remove,"
 iFlg=0
@@ -213,27 +213,35 @@ def SelectFile():
         k=k+1
         # print(k,fileno,each,fileSelected)
         if k==fileno:
-            fileSelected=each
+            filename=each.split(" ")
+            # print("Filename:", each, filename[0])
+            fileSelected=filename[0]
     # print("File Selected:",fileSelected)
     return fileSelected
 
 try: 
     print("Get filenames")
     def_global_var()
-    myUsart0.write(sCmdFiles)
+    myUsart0.write(sCmdFilesInfo)
     time.sleep(1)
-    getLine(sCmdFiles)
+    getLine(sCmdFilesInfo)
     time.sleep(1)
 
     print("Waiting for filenames.")
     fileSelected= SelectFile()
 
     if len(fileSelected)>0:
-        myUsart0.write(sCmdPrint+fileSelected)
-        time.sleep(1)
-        GetFileDump(sCmdPrint+fileSelected)
-        time.sleep(1)
-        # remove files=? 
+        # dump file=? 
+        yn=""
+        while yn!="y" and yn!="n":
+            yn=input("Dump "+fileSelected+"(y/n)")
+        if yn=="y":
+            myUsart0.write(sCmdPrint+fileSelected)
+            time.sleep(1)
+            GetFileDump(sCmdPrint+fileSelected)
+            time.sleep(1)
+            
+        # remove file=? 
         yn=""
         while yn!="y" and yn!="n":
             yn=input("Remove "+fileSelected+"(y/n)")
@@ -242,6 +250,7 @@ try:
     time.sleep(3)
     print("Restart sending data")
     myUsart0.write("restart")
+
     print("FishFilesCMDs.py Complete")
 
 

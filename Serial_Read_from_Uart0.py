@@ -16,4 +16,3 @@ while True:
         # print("any:",str(myUsart1.any()))
         # time.sleep(1)
     print("myUsart0: " , rxData.decode('utf-8'))
-    
