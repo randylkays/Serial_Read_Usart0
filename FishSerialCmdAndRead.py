@@ -61,7 +61,7 @@ def getLine():
             #print("i=",i,"Waiting for CMD response>" , stringData,"<")
             i = 0
 
-    print("Before try i =", i,"time or header cmd exist =", idx, idh)
+    print("Before try i =", i,"time cmd exist =", idx, "header cmd =",idh)
 
 print("Set time")
 timestamp=rtc.datetime()
@@ -107,4 +107,4 @@ except KeyboardInterrupt:
     print("Keyboard")
     pass # machine.soft_reset()
 
-  
+   
