@@ -1,3 +1,4 @@
+# FishFilesCMDs.py
 from machine import UART, Pin
 import time
 from os import urandom, statvfs
@@ -59,12 +60,13 @@ def getLine(sCmd):
         time.sleep(1)
         while myUsart0.any() > 0:
             rxData += myUsart0.readline()
-        idx=re.search("^CMD",rxData)
+        idx=re.search("CMD",rxData)
         if idx==None:
             print("No command, give it a moment and try again.")
-            exit()
-        print("rxData:", rxData)
-        stringData = rxData.decode('utf-8')
+            # exit()
+        else:
+            print("rxData:", rxData)
+            stringData = rxData.decode('utf-8')
         if (not stringData):
             i = i + 1
             print("No data:",i)
@@ -108,7 +110,7 @@ def readUpload(rxData,file):
             lineData=lineData+s[0]
             if (len(lineData)>0):
                 if iCmd==1:
-                    # print("Final-> ",lineData)
+                    print("Final-> ",lineData)
                     #file = open(filename, "a")
                     file.write(lineData+"\n")
                     #file.close()
@@ -117,6 +119,7 @@ def readUpload(rxData,file):
                     print("lineData=",lineData)
                     fCmd=recmd.split(lineData)
                     print("Commmand ack received:",fCmd[1])
+                    print("Watch the LED, it will flash while this is working.")
             iCmd=1
             lineData=s[1]
             iFlg = 0
@@ -125,20 +128,30 @@ def readUpload(rxData,file):
             led.value(iLed)
         else:
             lineData=lineData+stringData
+            # print("StringData=", stringData, end=" ")
         # print("stringData len>0  iFlg==1? ->",iFlg,"iCmd=",iCmd,"idlf=",idlf,stringData,lineData)
     # print("iFlg=",iFlg,"len(stringData)=",len(stringData),"lineData=", lineData)
     return 
 
 def GetFileDump(sCmd):
     global iCmd,iFlg,iDone,lineData,iLed,idlf
-    print("running GetFileDump =",sCmd,"iCmd=",iCmd)
+    iAttempts=30
+    print("Running GetFileDump =",sCmd,"iCmd=",iCmd)
     recomma=re.compile(",")
+    recolon=re.compile(":")
     f=recomma.split(sCmd)
     filename="FilesDump"+f[1]
     file = open(filename, "w")
     # file.close()
+    hdData=bytes()
+    i=0
     while iCmd==0:
+        i=i+1
+        if i>iAttempts:
+            print("Too long in GetFileDump(i=",i,") return")
+            return
         rxData = bytes()
+        rxData+=hdData
         time.sleep(0.1)
         while myUsart0.any() > 0:
             rxData += myUsart0.read(1)
@@ -146,13 +159,20 @@ def GetFileDump(sCmd):
         idx=re.search("CMD",rxData)
         idp=re.search("printfile",rxData)
         idlf=re.search("\n",rxData)
-        if idx!=None or idp!=None:
+        print("GetFileDump idx CMD:",idx, "idp printfile:",idp, "idlf linefeed:",idlf)
+        if idp!=None:
             iCmd=2
-            # print("When not None ->",iFlg,"iCmd=",iCmd,stringData,lineData,rxData)
+            print("When not None ->",iFlg,"iCmd=",iCmd,stringData,lineData,rxData)
+        elif idx!=None:
+            print("Got 'CMD', but not 'printfile, check one more time 'rxData':", rxData)
+            #r=recolon.split(rxData)
+            hdData=rxData # "CMD:"+r[1] # grab whatever is after CMD:
+            i=iAttempts-2 # try one more time then return 
         if iCmd>0:
-            # print("readit(",rxData,")")
+            print("readit(",rxData,")")
             readUpload(rxData,file)
-
+    
+    print("GetFileDump: iDone=",iDone, "iCmd:",iCmd)
     while iDone!=1:
         rxData = bytes()
         time.sleep(0.1)
@@ -237,7 +257,7 @@ try:
             yn=input("Dump "+fileSelected+"(y/n)")
         if yn=="y":
             myUsart0.write(sCmdPrint+fileSelected)
-            time.sleep(1)
+            # time.sleep(1)
             GetFileDump(sCmdPrint+fileSelected)
             time.sleep(1)
             
