@@ -22,7 +22,7 @@ if timestamp[0] == 2021:
     fohstrlist=[str(ii) for ii in fohlist]
     fohstr=''.join(fohstrlist)
     # correct year next year
-    timestringfilename = "FromFish2023" + fohstr + ".csv"
+    timestringfilename = "FromFish2024_" + fohstr + ".csv"
 else:
     timestringfilename="FromFish%04d%02d%02d_%02d%02d%02d.csv"%(timestamp[0:3] + timestamp[4:7])
 
