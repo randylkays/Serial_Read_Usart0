@@ -2,6 +2,7 @@
 from machine import UART, Pin
 import time
 from os import urandom, statvfs
+import re
 
 rtc=machine.RTC()
 led = Pin(25, Pin.OUT)   # create LED object from Pin 25, Set Pin 15 to output
