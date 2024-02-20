@@ -1,10 +1,12 @@
 from machine import UART, Pin
 import time
 from os import urandom, statvfs
+from sys import exit
 import re
 
 rtc=machine.RTC()
 led = Pin(25, Pin.OUT)   # create LED object from Pin 25, Set Pin 15 to output
+button = Pin(13, Pin.IN, Pin.PULL_UP)    #Create button object from Pin13 , Set GP13 to input
 
 myUsart0 = UART(0, baudrate=1200, bits=8, tx=Pin(0), rx=Pin(1), timeout=20)
 # Other side
@@ -61,11 +63,15 @@ def getLine():
             #print("i=",i,"Waiting for CMD response>" , stringData,"<")
             i = 0
 
+        if not button.value():
+            print("Set End Button Pushed")
+            exit()
+
     print("Before try i =", i,"time cmd exist =", idx, "header cmd =",idh)
 
-print("Set time")
 timestamp=rtc.datetime()
 settimestring="time,%04d-%02d-%02d %1d %02d:%02d:%02d"%(timestamp[0:7])
+print("Set time CMD:",settimestring)
 myUsart0.write(settimestring)
 time.sleep(5)
 getLine()
@@ -102,9 +108,12 @@ try:
                 led.value(iLed)
             else:
                 lineData=lineData+stringData
-            
+ 
+        if not button.value():
+            print("Data End Button Pushed")
+            exit()
+        
+
 except KeyboardInterrupt:
     print("Keyboard")
     pass # machine.soft_reset()
-
-   
