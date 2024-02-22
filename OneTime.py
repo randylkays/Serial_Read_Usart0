@@ -38,9 +38,9 @@ def getLine():
             if idx==None and idh==None:
                 print("Neither Time nor header were sent.  i=",i)
             elif idx!=None:
-                print("time CMD sent i=",i)
+                print("Yes time CMD sent i=",i)
             elif idh!=None:
-                print("header CMD sent i=",i)
+                print("Yes header CMD sent i=",i)
             else:
                 print("WTF! Got both time & header?  i=",i)
             #print("i=",i,"Waiting for CMD response>" , stringData,"<")
@@ -56,6 +56,10 @@ try:
     time.sleep(5)
     getLine()
     print("Did it work?")
+    # time.sleep(5)
+    # getLine()
+    # print("Did it work?")
+
 
             
 except KeyboardInterrupt:
