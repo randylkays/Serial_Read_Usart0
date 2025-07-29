@@ -8,9 +8,11 @@ rtc=machine.RTC()
 led = Pin(25, Pin.OUT)   # create LED object from Pin 25, Set Pin 15 to output
 button = Pin(17, Pin.IN, Pin.PULL_UP)    #Create button object from Pin13 , Set GP13 to input
 
+# write on 0
 myUsart0 = UART(0, baudrate=1200, bits=8, tx=Pin(0), rx=Pin(1), timeout=20)
-# tx pin 4, rx pin 5
+# read on 1
 myUsart1 = UART(1, baudrate=1200, bits=8, tx=Pin(4), rx=Pin(5), timeout=20)
+# tx pin 4, rx pin 5
 print("Starting FishSerialCmdAndRead.py  You may have to 'STOP' & Run a couple times.  Don't forget to officaly stop the program with a Cntl-C or push the button.")
 i = 0
 lineData=""
@@ -24,7 +26,7 @@ if timestamp[0] == 2021:
     fohstrlist=[str(ii) for ii in fohlist]
     fohstr=''.join(fohstrlist)
     # correct year next year
-    timestringfilename = "FromFish2024_" + fohstr + ".csv"
+    timestringfilename = "FromFish2025_" + fohstr + ".csv"
 else:
     timestringfilename="FromFish%04d%02d%02d_%02d%02d%02d.csv"%(timestamp[0:3] + timestamp[4:7])
 
