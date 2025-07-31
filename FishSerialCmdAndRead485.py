@@ -8,9 +8,9 @@ rtc=machine.RTC()
 led = Pin(25, Pin.OUT)   # create LED object from Pin 25, Set Pin 15 to output
 button = Pin(17, Pin.IN, Pin.PULL_UP)    #Create button object from Pin13 , Set GP13 to input
 
-# write on 0
+# Read on 0
 myUsart0 = UART(0, baudrate=1200, bits=8, tx=Pin(0), rx=Pin(1), timeout=20)
-# read on 1
+# write on 1
 myUsart1 = UART(1, baudrate=1200, bits=8, tx=Pin(4), rx=Pin(5), timeout=20)
 # tx pin 4, rx pin 5
 print("Starting FishSerialCmdAndRead.py  You may have to 'STOP' & Run a couple times.  Don't forget to officaly stop the program with a Cntl-C or push the button.")
@@ -41,10 +41,12 @@ def getLine():
     while stringData=="":
         rxData = bytes()
         time.sleep(0.1)
-        while myUsart1.any() > 0:
-            rxData += myUsart1.readline()
+        while myUsart0.any() > 0:
+            rxData += myUsart0.readline()
 
+        print("rxData:", rxData)
         stringData = rxData.decode('utf-8')
+            
         if (not stringData):
             i = i + 1
             print("No data:",i)
@@ -74,22 +76,23 @@ def getLine():
 timestamp=rtc.datetime()
 settimestring="time,%04d-%02d-%02d %1d %02d:%02d:%02d"%(timestamp[0:7])
 print("Set time CMD:",settimestring)
-myUsart0.write(settimestring)
+myUsart1.write(settimestring)
 time.sleep(5)
 getLine()
 time.sleep(3)
 print("Sending header request (10 second pause)")
-myUsart0.write("header")
+myUsart1.write("header")
 time.sleep(5)
 getLine()
 time.sleep(5)
+print("Starting loop")
 
 try:
     while True:
         rxData = bytes()
         time.sleep(0.1)
-        while myUsart1.any() > 0:
-            rxData += myUsart1.read(1)
+        while myUsart0.any() > 0:
+            rxData += myUsart0.read(1)
         
         stringData = rxData.decode('utf-8')
         if (not stringData):
@@ -119,3 +122,8 @@ try:
 except KeyboardInterrupt:
     print("Keyboard")
     pass # machine.soft_reset()
+
+except OSError as err:
+    print("OSError")
+    print("OSError:",err.args)
+    time.sleep(1)
